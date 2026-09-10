@@ -1,0 +1,74 @@
+### --- Spring Boot & Maven ---
+target/
+!.mvn/wrapper/maven-wrapper.properties
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### --- Fichiers d'environnement & Secrets ---
+.env
+.env.local
+.env.*.local
+!.env.example
+!.env.template
+application-local.properties
+application-local.yml
+application-*-local.properties
+
+### --- Logs & Rapports d'erreurs JVM ---
+*.log
+logs/
+hs_err_pid*
+replay_pid*
+
+### --- IntelliJ IDEA ---
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+### --- Visual Studio Code ---
+.vscode/
+
+### --- Eclipse / Spring Tool Suite (STS) ---
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache/
+
+### --- NetBeans ---
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+
+### --- Système d'exploitation (OS) ---
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+
+# Linux / Éditeurs génériques
+*~
+*.swp
+*.swo
+
+### --- Documentation auto-générée Spring Initializr ---
+HELP.md
