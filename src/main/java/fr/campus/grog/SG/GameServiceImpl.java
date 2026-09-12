@@ -18,19 +18,28 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class GameServiceImpl implements GameService {
 
-    private final Map<String, GameFactory> factories = Map.of(
-            "tictactoe", new TicTacToeGameFactory(),
-            "15 puzzle", new TaquinGameFactory(),
-            "connect4", new ConnectFourGameFactory()
-    );
+    private final Map<String, GamePlugin> plugins = new HashMap<>();
+
+    // Spring automatically collects and injects(new()) all beans implementing GamePlugin
+    public GameServiceImpl(List<GamePlugin> pluginList) {
+        for(GamePlugin plugin : pluginList){
+            this.plugins.put(plugin.getId(), plugin);
+        }
+    }
 
     private final Map<UUID, Game> gameStorage = new ConcurrentHashMap<>();
 
     @Override
     public Game createGame(GameCreationParams requestParams) {
-        GameFactory gameFactory = this.factories.get(requestParams.gameFactoryId());
-        Game game = gameFactory.createGame(requestParams.nbPlayers(), requestParams.boardSize());
-        this.gameStorage.put(game.getId(), game); // Sauvegarde pour les futures requêtes GET
+        // 1. Retrieve the plugin corresponding to the requested game type
+        GamePlugin plugin = this.plugins.get(requestParams.gameFactoryId());
+
+        // 2. Delegate game creation to the plugin
+        Game game = plugin.createGame(requestParams.nbPlayers(), requestParams.boardSize());
+
+        // 3. Save game instance for subsequent requests (e.g. GET /games/{id})
+        this.gameStorage.put(game.getId(), game);
+
         return game;
     }
 
