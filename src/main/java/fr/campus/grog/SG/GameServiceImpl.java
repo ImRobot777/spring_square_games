@@ -19,15 +19,15 @@ import java.util.concurrent.ConcurrentHashMap;
 public class GameServiceImpl implements GameService {
 
     private final Map<String, GamePlugin> plugins = new HashMap<>();
+    private final GameDao gameDao;
 
-    // Spring automatically collects and injects(new()) all beans implementing GamePlugin
-    public GameServiceImpl(List<GamePlugin> pluginList) {
+    // Spring automatically collects and injects(new()) all beans implementing GamePlugin and GameDao
+    public GameServiceImpl(List<GamePlugin> pluginList, GameDao gameDao) {
+        this.gameDao = gameDao;
         for(GamePlugin plugin : pluginList){
             this.plugins.put(plugin.getId(), plugin);
         }
     }
-
-    private final Map<UUID, Game> gameStorage = new ConcurrentHashMap<>();
 
     @Override
     public Game createGame(GameCreationParams requestParams) {
@@ -38,15 +38,16 @@ public class GameServiceImpl implements GameService {
         Game game = plugin.createGame(requestParams.nbPlayers(), requestParams.boardSize());
 
         // 3. Save game instance for subsequent requests (e.g. GET /games/{id})
-        this.gameStorage.put(game.getId(), game);
-
-        return game;
+        return this.gameDao.upsert(game);
     }
+
+
 
     @Override
     public Game getGame(UUID gameId) {
-        return this.gameStorage.get(gameId);
+        return this.gameDao.findById(gameId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
     }
+
 
 
     @Override
@@ -97,6 +98,7 @@ public class GameServiceImpl implements GameService {
 
         try {
             tokenToMove.moveTo(moveParams.target());
+            this.gameDao.upsert(game);// For persistent Save in case that game is saved not in memory but in Data Base
         } catch (InvalidPositionException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
