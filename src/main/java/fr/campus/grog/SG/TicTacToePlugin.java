@@ -1,13 +1,18 @@
 package fr.campus.grog.SG;
 
 import fr.le_campus_numerique.square_games.engine.Game;
+import fr.le_campus_numerique.square_games.engine.InconsistentGameDefinitionException;
+import fr.le_campus_numerique.square_games.engine.TokenPosition;
 import fr.le_campus_numerique.square_games.engine.tictactoe.TicTacToeGameFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 
 @Component
 public class TicTacToePlugin implements GamePlugin {
@@ -44,6 +49,17 @@ public class TicTacToePlugin implements GamePlugin {
         int actualPlayers = nbPlayers!=null ? nbPlayers : this.defaultPlayerCount;
         int actualSize = boardSize != null ? boardSize : this.defaultBoardSize;
         return this.factory.createGame(actualPlayers, actualSize);
+    }
+
+    @Override
+    public Game reloadGame(UUID id, int boardSize, List<UUID> playerIds,
+                           Collection<TokenPosition<UUID>> remainingTokens,
+                           Collection<TokenPosition<UUID>> boardTokens) {
+        try {
+            return this.factory.createGameWithIds(id, boardSize, playerIds, remainingTokens, boardTokens);
+        } catch (InconsistentGameDefinitionException e) {
+            throw new RuntimeException("Failed to reload game " + id, e);
+        }
     }
 
 }
