@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+//Only concerne ACTIVE(CREATED) GAME INSTANCES
 public interface GameDao {
     Stream<Game> findAll();
     Optional<Game> findById(UUID gameId);
