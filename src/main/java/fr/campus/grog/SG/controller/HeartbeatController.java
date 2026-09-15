@@ -2,23 +2,20 @@ package fr.campus.grog.SG.controller;
 
 import fr.campus.grog.SG.service.HeartbeatSensor;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class HeartbeatController {
 
-    @Autowired
-    private HeartbeatSensor heartbeatSensor;
+    private final HeartbeatSensor heartbeatSensor;
 
-    //public HeartbeatController(HeartbeatSensor heartbeatSensor){
-    public HeartbeatController(){
-        //this.heartbeatSensor = heartbeatSensor;
+    public HeartbeatController(HeartbeatSensor heartbeatSensor) {
+        this.heartbeatSensor = heartbeatSensor;
     }
 
     @GetMapping("/heartbeat")
-    public int getHeartbeat(){
-        return heartbeatSensor.get();
+    public int getHeartbeat() {
+        return this.heartbeatSensor.get();
     }
 }

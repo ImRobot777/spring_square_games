@@ -6,7 +6,6 @@ import fr.campus.grog.SG.service.GameService;
 
 import fr.le_campus_numerique.square_games.engine.CellPosition;
 import fr.le_campus_numerique.square_games.engine.Game;
-import fr.le_campus_numerique.square_games.engine.GameFactory;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;

@@ -35,18 +35,25 @@ public class JpaGameDao implements GameDao {
         GamePlugin plugin = this.plugins.get(entity.factoryId);
         UUID gameId = UUID.fromString(entity.id);
         List<UUID> playerIds = parsePlayerIds(entity.playerIds);
+
         List<TokenPosition<UUID>> boardTokens = new ArrayList<>();
         List<TokenPosition<UUID>> remainingTokens = new ArrayList<>();
+
         for (GameTokenEntity token : entity.tokens) {
+            if (token.removed) {
+                continue; // Ignore removed tokens during active board restoration
+            }
+
             UUID ownerId = token.ownerId != null ? UUID.fromString(token.ownerId) : null;
-            if (!token.removed) {
-                if (token.x != null && token.y != null) {
-                    boardTokens.add(new TokenPosition<>(ownerId, token.name, token.x, token.y));
-                } else {
-                    remainingTokens.add(new TokenPosition<>(ownerId, token.name, 0, 0));
-                }
+            boolean isOnBoard = (token.x != null && token.y != null);
+
+            if (isOnBoard) {
+                boardTokens.add(new TokenPosition<>(ownerId, token.name, token.x, token.y));
+            } else {
+                remainingTokens.add(new TokenPosition<>(ownerId, token.name, 0, 0));
             }
         }
+
         return plugin.reloadGame(gameId, entity.boardSize, playerIds, remainingTokens, boardTokens);
     }
 
@@ -55,15 +62,20 @@ public class JpaGameDao implements GameDao {
         if (playerIdsStr == null || playerIdsStr.isBlank()) {
             return List.of();
         }
+
         String cleaned = playerIdsStr.replace("[", "").replace("]", "").trim();
         if (cleaned.isEmpty()) {
             return List.of();
         }
-        return Arrays.stream(cleaned.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .map(UUID::fromString)
-                .toList();
+
+        List<UUID> playerIds = new ArrayList<>();
+        for (String element : cleaned.split(",")) {
+            String trimmed = element.trim();
+            if (!trimmed.isEmpty()) {
+                playerIds.add(UUID.fromString(trimmed));
+            }
+        }
+        return playerIds;
     }
 
     @Override
@@ -92,47 +104,40 @@ public class JpaGameDao implements GameDao {
 
     // Converts domain Game object into relational GameEntity with all its tokens
     private GameEntity toEntity(Game game) {
-        // 1. Create a new empty entity and map basic fields
         GameEntity entity = new GameEntity();
         entity.id = game.getId().toString();
         entity.factoryId = game.getFactoryId();
         entity.boardSize = game.getBoardSize();
         entity.playerIds = game.getPlayerIds().toString();
 
-        // 2. Map tokens currently placed on the board
+        // 1. Tokens currently placed on the board
         for (Map.Entry<CellPosition, Token> entry : game.getBoard().entrySet()) {
-            GameTokenEntity tokenEntity = new GameTokenEntity();
-            tokenEntity.name = entry.getValue().getName();
-            tokenEntity.ownerId = entry.getValue().getOwnerId().map(UUID::toString).orElse(null);
-            tokenEntity.x = entry.getKey().x(); // CellPosition is a Java record: accessor is .x()
-            tokenEntity.y = entry.getKey().y(); // Accessor is .y()
-            tokenEntity.removed = false;
-            entity.tokens.add(tokenEntity);
+            CellPosition pos = entry.getKey();
+            Token token = entry.getValue();
+            entity.tokens.add(createTokenEntity(token, pos.x(), pos.y(), false));
         }
 
-        // 3. Map remaining tokens in reserve (not placed yet, coordinates are null)
+        // 2. Tokens in reserve (not placed yet, coordinates are null)
         for (Token token : game.getRemainingTokens()) {
-            GameTokenEntity tokenEntity = new GameTokenEntity();
-            tokenEntity.name = token.getName();
-            tokenEntity.ownerId = token.getOwnerId().map(UUID::toString).orElse(null);
-            tokenEntity.x = null;
-            tokenEntity.y = null;
-            tokenEntity.removed = false;
-            entity.tokens.add(tokenEntity);
+            entity.tokens.add(createTokenEntity(token, null, null, false));
         }
 
-        // 4. Map removed/captured tokens (coordinates are null, removed is true)
+        // 3. Removed/captured tokens (coordinates are null, removed is true)
         for (Token token : game.getRemovedTokens()) {
-            GameTokenEntity tokenEntity = new GameTokenEntity();
-            tokenEntity.name = token.getName();
-            tokenEntity.ownerId = token.getOwnerId().map(UUID::toString).orElse(null);
-            tokenEntity.x = null;
-            tokenEntity.y = null;
-            tokenEntity.removed = true;
-            entity.tokens.add(tokenEntity);
+            entity.tokens.add(createTokenEntity(token, null, null, true));
         }
 
-        // 5. Return a complete Game Entity Object READY to be saved in DB
         return entity;
+    }
+
+    // Helper to build a GameTokenEntity cleanly without duplicating mapping code
+    private GameTokenEntity createTokenEntity(Token token, Integer x, Integer y, boolean removed) {
+        GameTokenEntity tokenEntity = new GameTokenEntity();
+        tokenEntity.name = token.getName();
+        tokenEntity.ownerId = token.getOwnerId().map(UUID::toString).orElse(null);
+        tokenEntity.x = x;
+        tokenEntity.y = y;
+        tokenEntity.removed = removed;
+        return tokenEntity;
     }
 }
