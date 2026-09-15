@@ -1,4 +1,6 @@
-package fr.campus.grog.SG;
+package fr.campus.grog.SG.controller;
+
+import fr.campus.grog.SG.service.GameCatalog;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;

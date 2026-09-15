@@ -1,4 +1,8 @@
-package fr.campus.grog.SG;
+package fr.campus.grog.SG.controller;
+
+import fr.campus.grog.SG.dto.GameCreationParams;
+import fr.campus.grog.SG.dto.MoveParams;
+import fr.campus.grog.SG.service.GameService;
 
 import fr.le_campus_numerique.square_games.engine.CellPosition;
 import fr.le_campus_numerique.square_games.engine.Game;

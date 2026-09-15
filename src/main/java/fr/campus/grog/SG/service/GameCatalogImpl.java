@@ -1,4 +1,6 @@
-package fr.campus.grog.SG;
+package fr.campus.grog.SG.service;
+
+import fr.campus.grog.SG.plugin.GamePlugin;
 
 import com.sun.source.util.Plugin;
 import fr.le_campus_numerique.square_games.engine.connectfour.ConnectFourGameFactory;

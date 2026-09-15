@@ -1,4 +1,9 @@
-package fr.campus.grog.SG;
+package fr.campus.grog.SG.dao;
+
+import fr.campus.grog.SG.entity.GameEntity;
+import fr.campus.grog.SG.entity.GameEntityRepository;
+import fr.campus.grog.SG.entity.GameTokenEntity;
+import fr.campus.grog.SG.plugin.GamePlugin;
 
 import fr.le_campus_numerique.square_games.engine.CellPosition;
 import fr.le_campus_numerique.square_games.engine.Game;

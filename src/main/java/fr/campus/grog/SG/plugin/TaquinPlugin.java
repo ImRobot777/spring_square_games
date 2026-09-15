@@ -1,9 +1,9 @@
-package fr.campus.grog.SG;
+package fr.campus.grog.SG.plugin;
 
 import fr.le_campus_numerique.square_games.engine.Game;
 import fr.le_campus_numerique.square_games.engine.InconsistentGameDefinitionException;
 import fr.le_campus_numerique.square_games.engine.TokenPosition;
-import fr.le_campus_numerique.square_games.engine.tictactoe.TicTacToeGameFactory;
+import fr.le_campus_numerique.square_games.engine.taquin.TaquinGameFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
@@ -15,20 +15,20 @@ import java.util.Locale;
 import java.util.UUID;
 
 @Component
-public class TicTacToePlugin implements GamePlugin {
+public class TaquinPlugin implements GamePlugin {
 
     // Inject default values from application.properties
-    @Value("${game.tictactoe.default-player-count}")
+    @Value("${game.taquin.default-player-count}")
     private int defaultPlayerCount;
 
-    @Value("${game.tictactoe.default-board-size}")
+    @Value("${game.taquin.default-board-size}")
     private int defaultBoardSize;
 
     @Autowired
     private MessageSource messageSource;
 
     // Engine factory instance (encapsulation)
-    private final TicTacToeGameFactory factory = new TicTacToeGameFactory();
+    private final TaquinGameFactory factory = new TaquinGameFactory();
 
     // 1. Return the game identifier
     @Override
@@ -40,7 +40,7 @@ public class TicTacToePlugin implements GamePlugin {
     @Override
     public String getName(Locale locale) {
         // Look up translated name based on current request locale
-        return this.messageSource.getMessage("game.tictactoe.name", null, locale);
+        return this.messageSource.getMessage("game.taquin.name", null, locale);
     }
 
     // 3. Create the game using fallback values if parameters are null

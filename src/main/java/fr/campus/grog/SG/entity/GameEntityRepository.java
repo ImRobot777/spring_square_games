@@ -1,4 +1,4 @@
-package fr.campus.grog.SG;
+package fr.campus.grog.SG.entity;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

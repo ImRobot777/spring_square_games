@@ -1,4 +1,4 @@
-package fr.campus.grog.SG;
+package fr.campus.grog.SG.service;
 
 public interface HeartbeatSensor {
 

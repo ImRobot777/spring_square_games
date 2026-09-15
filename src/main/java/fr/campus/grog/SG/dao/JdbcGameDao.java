@@ -1,4 +1,6 @@
-package fr.campus.grog.SG;
+package fr.campus.grog.SG.dao;
+
+import fr.campus.grog.SG.plugin.GamePlugin;
 
 import fr.le_campus_numerique.square_games.engine.Game;
 import org.springframework.context.annotation.Primary;
