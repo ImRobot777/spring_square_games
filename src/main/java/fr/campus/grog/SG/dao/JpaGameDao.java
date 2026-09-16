@@ -37,24 +37,22 @@ public class JpaGameDao implements GameDao {
         List<UUID> playerIds = parsePlayerIds(entity.playerIds);
 
         List<TokenPosition<UUID>> boardTokens = new ArrayList<>();
-        List<TokenPosition<UUID>> remainingTokens = new ArrayList<>();
+        List<TokenPosition<UUID>> removedTokens = new ArrayList<>();
 
         for (GameTokenEntity token : entity.tokens) {
-            if (token.removed) {
-                continue; // Ignore removed tokens during active board restoration
-            }
-
             UUID ownerId = token.ownerId != null ? UUID.fromString(token.ownerId) : null;
-            boolean isOnBoard = (token.x != null && token.y != null);
 
-            if (isOnBoard) {
+            if (token.removed) {
+                // Tokens captured or removed from play
+                removedTokens.add(new TokenPosition<>(ownerId, token.name, 0, 0));
+            } else if (token.x != null && token.y != null) {
+                // Tokens currently placed on the board with specific coordinates
                 boardTokens.add(new TokenPosition<>(ownerId, token.name, token.x, token.y));
-            } else {
-                remainingTokens.add(new TokenPosition<>(ownerId, token.name, 0, 0));
             }
+            // Tokens in reserve (x == null && y == null && !removed) are recomputed by the engine
         }
 
-        return plugin.reloadGame(gameId, entity.boardSize, playerIds, remainingTokens, boardTokens);
+        return plugin.reloadGame(gameId, entity.boardSize, playerIds, boardTokens, removedTokens);
     }
 
     // Helper to parse "[uuid1, uuid2]" String from DB back into List<UUID>

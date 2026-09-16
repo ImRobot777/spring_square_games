@@ -18,6 +18,6 @@ public interface GamePlugin {
     Game reloadGame(UUID id,
                     int boardSize,
                     List<UUID> playerIds,
-                    Collection<TokenPosition<UUID>> remainingTokens,
-                    Collection<TokenPosition<UUID>> boardTokens);
+                    Collection<TokenPosition<UUID>> boardTokens,
+                    Collection<TokenPosition<UUID>> removedTokens);
 }

@@ -53,10 +53,10 @@ public class TaquinPlugin implements GamePlugin {
 
     @Override
     public Game reloadGame(UUID id, int boardSize, List<UUID> playerIds,
-                           Collection<TokenPosition<UUID>> remainingTokens,
-                           Collection<TokenPosition<UUID>> boardTokens) {
+                           Collection<TokenPosition<UUID>> boardTokens,
+                           Collection<TokenPosition<UUID>> removedTokens) {
         try {
-            return this.factory.createGameWithIds(id, boardSize, playerIds, remainingTokens, boardTokens);
+            return this.factory.createGameWithIds(id, boardSize, playerIds, boardTokens, removedTokens);
         } catch (InconsistentGameDefinitionException e) {
             throw new RuntimeException("Failed to reload game " + id, e);
         }

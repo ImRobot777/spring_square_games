@@ -13,7 +13,8 @@ public class GameEntity {
     public int boardSize;
     public String playerIds;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    // Eagerly fetch tokens because a Game aggregate cannot be reconstructed without them
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JoinColumn(name = "game_id") // Foreign key in game_token_entity table
     public List<GameTokenEntity> tokens = new ArrayList<>();
 
