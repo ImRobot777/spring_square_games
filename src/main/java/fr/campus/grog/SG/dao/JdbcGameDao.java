@@ -3,7 +3,6 @@ package fr.campus.grog.SG.dao;
 import fr.campus.grog.SG.plugin.GamePlugin;
 
 import fr.le_campus_numerique.square_games.engine.Game;
-import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
