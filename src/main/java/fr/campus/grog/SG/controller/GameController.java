@@ -40,6 +40,4 @@ public class GameController {
         return this.gameService.move(gameId, moveParams);
     }
 
-
-
 }
