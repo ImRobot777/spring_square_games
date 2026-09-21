@@ -10,11 +10,14 @@ import java.util.Collection;
 import java.util.UUID;
 
 public interface GameService {
-    Game createGame(GameCreationParams requestParams);
+
+    Collection<Game> getUserGame(UUID userId);
+
+    Game createGame(UUID userId, GameCreationParams requestParams);
 
     Game getGame(UUID id);
 
     Collection<CellPosition> getAvailableMoves(UUID id);
 
-    Game move(UUID gameId, MoveParams moveParams);
+    Game move(UUID userId, UUID gameId, MoveParams moveParams);
 }

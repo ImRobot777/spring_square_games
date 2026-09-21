@@ -20,9 +20,14 @@ public class GameController {
         this.gameService = gameService;
     }
 
+    @GetMapping("/games")
+    public Collection<Game> getGames(@RequestHeader("X-UserId") UUID userId) {
+        return this.gameService.getUserGame(userId);
+    }
+
     @PostMapping("/games")
-    public Game createGame(@RequestBody GameCreationParams requestParams) {
-        return this.gameService.createGame(requestParams);
+    public Game createGame(@RequestHeader("X-UserId") UUID userId, @RequestBody GameCreationParams requestParams) {
+        return this.gameService.createGame(userId, requestParams);
     }
 
     @GetMapping("/games/{gameId}")
@@ -36,8 +41,8 @@ public class GameController {
     }
 
     @PostMapping("/games/{gameId}/moves")
-    public Game move(@PathVariable UUID gameId, @RequestBody MoveParams moveParams) {
-        return this.gameService.move(gameId, moveParams);
+    public Game move(@RequestHeader("X-UserId") UUID userId, @PathVariable UUID gameId, @RequestBody MoveParams moveParams) {
+        return this.gameService.move(userId, gameId, moveParams);
     }
 
 }

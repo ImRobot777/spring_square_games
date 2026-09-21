@@ -42,7 +42,7 @@ public class JdbcGameDao implements GameDao {
             // b. Retrieve the corresponding plugin from our map:
             GamePlugin plugin = this.plugins.get(factoryId);
             // c. Recreate the game:
-            return plugin.createGame(null, boardSize);
+            return plugin.createGame((Integer) null, boardSize);
         });
 
         return games.stream();
@@ -61,7 +61,7 @@ public class JdbcGameDao implements GameDao {
             // b. Retrieve the corresponding plugin from our map:
             GamePlugin plugin = this.plugins.get(factoryId);
             // c. Recreate the game:
-            return plugin.createGame(null, boardSize);
+            return plugin.createGame((Integer) null, boardSize);
         });
 
         // 2. Convert the resulting List<Game> into an Optional<Game>

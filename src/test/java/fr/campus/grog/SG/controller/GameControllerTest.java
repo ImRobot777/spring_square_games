@@ -47,8 +47,28 @@ class GameControllerTest {
 
     @Test
     void testCreateGame_ReturnsHttp200() throws Exception {
-        when(gameService.createGame(any(GameCreationParams.class))).thenReturn(sampleGame);
+        UUID userId = UUID.randomUUID();
+        when(gameService.createGame(eq(userId), any(GameCreationParams.class))).thenReturn(sampleGame);
 
+        String jsonPayload = """
+        {
+            "gameFactoryId": "tictactoe",
+            "nbPlayers": 2,
+            "boardSize": 3
+        }
+        """;
+
+        mockMvc.perform(post("/games")
+                        .header("X-UserId", userId.toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonPayload))
+                .andExpect(status().isOk());
+
+        verify(gameService).createGame(eq(userId), any(GameCreationParams.class));
+    }
+
+    @Test
+    void testCreateGame_WithoutUserIdHeader_ReturnsHttp400() throws Exception {
         String jsonPayload = """
         {
             "gameFactoryId": "tictactoe",
@@ -60,9 +80,25 @@ class GameControllerTest {
         mockMvc.perform(post("/games")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonPayload))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testGetGames_ReturnsHttp200() throws Exception {
+        UUID userId = UUID.randomUUID();
+        when(gameService.getUserGame(userId)).thenReturn(List.of(sampleGame));
+
+        mockMvc.perform(get("/games")
+                        .header("X-UserId", userId.toString()))
                 .andExpect(status().isOk());
 
-        verify(gameService).createGame(any(GameCreationParams.class));
+        verify(gameService).getUserGame(userId);
+    }
+
+    @Test
+    void testGetGames_WithoutUserIdHeader_ReturnsHttp400() throws Exception {
+        mockMvc.perform(get("/games"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -102,8 +138,28 @@ class GameControllerTest {
     @Test
     void testMove_ReturnsHttp200() throws Exception {
         UUID gameId = sampleGame.getId();
-        when(gameService.move(eq(gameId), any())).thenReturn(sampleGame);
+        UUID userId = UUID.randomUUID();
+        when(gameService.move(eq(userId), eq(gameId), any())).thenReturn(sampleGame);
 
+        String jsonPayload = """
+        {
+            "target": {"x": 1, "y": 1},
+            "source": null
+        }
+        """;
+
+        mockMvc.perform(post("/games/{gameId}/moves", gameId)
+                        .header("X-UserId", userId.toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonPayload))
+                .andExpect(status().isOk());
+
+        verify(gameService).move(eq(userId), eq(gameId), any());
+    }
+
+    @Test
+    void testMove_WithoutUserIdHeader_ReturnsHttp400() throws Exception {
+        UUID gameId = sampleGame.getId();
         String jsonPayload = """
         {
             "target": {"x": 1, "y": 1},
@@ -114,8 +170,6 @@ class GameControllerTest {
         mockMvc.perform(post("/games/{gameId}/moves", gameId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonPayload))
-                .andExpect(status().isOk());
-
-        verify(gameService).move(eq(gameId), any());
+                .andExpect(status().isBadRequest());
     }
 }

@@ -1,5 +1,6 @@
 package fr.campus.grog.SG.service;
 
+import fr.campus.grog.SG.client.UserValidationClient;
 import fr.campus.grog.SG.dao.GameDao;
 import fr.campus.grog.SG.dto.GameCreationParams;
 import fr.campus.grog.SG.dto.MoveParams;
@@ -20,22 +21,53 @@ public class GameServiceImpl implements GameService {
 
     private final Map<String, GamePlugin> plugins = new HashMap<>();
     private final GameDao gameDao;
+    private final UserValidationClient userValidationClient;
 
     // Spring automatically collects and injects(new()) all beans implementing GamePlugin and GameDao
-    public GameServiceImpl(List<GamePlugin> pluginList, GameDao gameDao) {
+    public GameServiceImpl(List<GamePlugin> pluginList, GameDao gameDao, UserValidationClient userValidationClient) {
+        this.userValidationClient = userValidationClient;
         this.gameDao = gameDao;
+
         for(GamePlugin plugin : pluginList){
             this.plugins.put(plugin.getId(), plugin);
         }
     }
 
+    public Collection<Game> getUserGame(UUID userId) {
+        // 1. Filtrer le flux pour ne garder que les parties contenant l'identifiant du joueur
+        return this.gameDao.findAll()
+                .filter(game -> game.getPlayerIds().contains(userId))
+                .toList();
+    }
+
     @Override
-    public Game createGame(GameCreationParams requestParams) {
+    public Game createGame(UUID creatorId, GameCreationParams requestParams) {
+
+        //0 Must check if userId that try to create a game is existing
+        if(creatorId == null || !this.userValidationClient.isUserValid(creatorId)){
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid creator user ID");
+        }
+
         // 1. Retrieve the plugin corresponding to the requested game type
         GamePlugin plugin = this.plugins.get(requestParams.gameFactoryId());
+        if(plugin == null){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown requested game");
+        }
+
+        Set<UUID> allPlayerIds = new LinkedHashSet<>();
+        allPlayerIds.add(creatorId);
+        if (requestParams.opponentIds() != null) {
+            for (UUID opponentId : requestParams.opponentIds()) {
+                if (!this.userValidationClient.isUserValid(opponentId)) {
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid opponent user ID: " + opponentId);
+                }
+                allPlayerIds.add(opponentId);
+            }
+        }
 
         // 2. Delegate game creation to the plugin
-        Game game = plugin.createGame(requestParams.nbPlayers(), requestParams.boardSize());
+        //Game game = plugin.createGame(requestParams.nbPlayers(), requestParams.boardSize());
+        Game game = plugin.createGame(allPlayerIds, requestParams.boardSize());
 
         // 3. Save game instance for subsequent requests (e.g. GET /games/{id})
         return this.gameDao.upsert(game);
@@ -67,8 +99,16 @@ public class GameServiceImpl implements GameService {
     }
 
     @Override
-    public Game move(UUID gameId, MoveParams moveParams) {
+    public Game move(UUID userId, UUID gameId, MoveParams moveParams) {
+
+        if(!this.userValidationClient.isUserValid(userId)){
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid user ID");
+        }
+
         Game game = this.getGame(gameId);
+        if(!game.getCurrentPlayerId().equals(userId)){
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "It is not your turn");
+        }
 
         Token tokenToMove = null;
 
