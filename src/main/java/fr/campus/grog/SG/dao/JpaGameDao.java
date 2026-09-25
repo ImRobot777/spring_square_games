@@ -77,9 +77,10 @@ public class JpaGameDao implements GameDao {
     }
 
     @Override
-    public Stream<Game> findAll() {
+    public List<Game> findAll() {
         return this.repository.findAll().stream()
-                .map(this::toGame);
+                .map(this::toGame)
+                .toList(); // .toList() <==> new way of .collect(Collectors.toList())
     }
 
     @Override

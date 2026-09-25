@@ -11,13 +11,14 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
 import java.util.UUID;
 
 @RestController
-@Tag(name = "Parties de jeu", description = "Gestion du cycle de vie des parties (création, consultation, exécution des coups)")
+@Tag(name = "Game Sessions", description = "Game lifecycle management (creation, retrieval, move execution)")
 public class GameController {
 
     private final GameService gameService;
@@ -26,68 +27,67 @@ public class GameController {
         this.gameService = gameService;
     }
 
-    @Operation(summary = "Lister les parties d'un joueur", description = "Retourne l'ensemble des parties actives ou terminées auxquelles le joueur identifié participe.")
+    @Operation(summary = "List player games", description = "Returns all active or completed games in which the identified player participates.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Liste des parties récupérée avec succès"),
-            @ApiResponse(responseCode = "400", description = "En-tête X-UserId manquant ou mal formé")
+            @ApiResponse(responseCode = "200", description = "Games list retrieved successfully"),
     })
     @GetMapping("/games")
     public Collection<Game> getGames(
-            @Parameter(description = "Identifiant UUID du joueur demandeur", required = true)
-            @RequestHeader("X-UserId") UUID userId) {
+            @Parameter(hidden = true)
+            @AuthenticationPrincipal UUID userId) {
         return this.gameService.getUserGame(userId);
     }
 
-    @Operation(summary = "Créer une nouvelle partie", description = "Initialise un plateau de jeu selon le type (tictactoe, connect4, taquin) et associe le créateur et d'éventuels adversaires.")
+    @Operation(summary = "Create a new game", description = "Initializes a game board according to the game type (tictactoe, connect4, taquin) and associates the creator and optional opponents.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Partie créée et persistée avec succès"),
-            @ApiResponse(responseCode = "400", description = "Paramètres invalides ou type de jeu inconnu"),
-            @ApiResponse(responseCode = "403", description = "Créateur ou adversaire non reconnu par le service Square Users")
+            @ApiResponse(responseCode = "200", description = "Game created and persisted successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid parameters or unknown game type"),
+            @ApiResponse(responseCode = "403", description = "Creator or opponent not recognized by Square Users service")
     })
     @PostMapping("/games")
     public Game createGame(
-            @Parameter(description = "Identifiant UUID du joueur créateur", required = true)
-            @RequestHeader("X-UserId") UUID userId,
+            @Parameter(hidden = true)
+            @AuthenticationPrincipal UUID userId,
             @RequestBody GameCreationParams requestParams) {
         return this.gameService.createGame(userId, requestParams);
     }
 
-    @Operation(summary = "Consulter une partie par son identifiant", description = "Retourne l'état complet du jeu, les joueurs associés, la taille du plateau et les pions restants.")
+    @Operation(summary = "Get game by ID", description = "Returns the full game state, associated players, board size, and remaining tokens.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Partie trouvée"),
-            @ApiResponse(responseCode = "404", description = "Aucune partie trouvée pour cet identifiant")
+            @ApiResponse(responseCode = "200", description = "Game found"),
+            @ApiResponse(responseCode = "404", description = "No game found for this identifier")
     })
     @GetMapping("/games/{gameId}")
     public Game getGame(
-            @Parameter(description = "Identifiant UUID de la partie", required = true)
+            @Parameter(description = "UUID identifier of the game", required = true)
             @PathVariable UUID gameId) {
         return this.gameService.getGame(gameId);
     }
 
-    @Operation(summary = "Lister les coups possibles", description = "Calcule et renvoie la collection des positions de cases immédiatement jouables.")
+    @Operation(summary = "List available moves", description = "Computes and returns the collection of immediately playable cell positions.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Liste des coordonnées autorisées"),
-            @ApiResponse(responseCode = "404", description = "Partie introuvable")
+            @ApiResponse(responseCode = "200", description = "List of permitted coordinates"),
+            @ApiResponse(responseCode = "404", description = "Game not found")
     })
     @GetMapping("/games/{gameId}/moves")
     public Collection<CellPosition> getMoves(
-            @Parameter(description = "Identifiant UUID de la partie", required = true)
+            @Parameter(description = "UUID identifier of the game", required = true)
             @PathVariable UUID gameId) {
         return this.gameService.getAvailableMoves(gameId);
     }
 
-    @Operation(summary = "Jouer un coup", description = "Déplace un pion vers la case cible en vérifiant l'identité du joueur et son tour de jeu.")
+    @Operation(summary = "Play a move", description = "Moves a token to the target cell after verifying player identity and turn.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Coup joué avec succès et état du jeu actualisé"),
-            @ApiResponse(responseCode = "400", description = "Coup invalide ou aucun pion déplaçable vers la case cible"),
-            @ApiResponse(responseCode = "403", description = "Joueur non autorisé ou ce n'est pas son tour de jouer"),
-            @ApiResponse(responseCode = "404", description = "Partie introuvable")
+            @ApiResponse(responseCode = "200", description = "Move played successfully and game state updated"),
+            @ApiResponse(responseCode = "400", description = "Invalid move or no movable token towards the target cell"),
+            @ApiResponse(responseCode = "403", description = "Unauthorized player or not player's turn to play"),
+            @ApiResponse(responseCode = "404", description = "Game not found")
     })
     @PostMapping("/games/{gameId}/moves")
     public Game move(
-            @Parameter(description = "Identifiant UUID du joueur qui tente de jouer", required = true)
-            @RequestHeader("X-UserId") UUID userId,
-            @Parameter(description = "Identifiant UUID de la partie", required = true)
+            @Parameter(hidden = true)
+            @AuthenticationPrincipal UUID userId,
+            @Parameter(description = "UUID identifier of the game", required = true)
             @PathVariable UUID gameId,
             @RequestBody MoveParams moveParams) {
         return this.gameService.move(userId, gameId, moveParams);

@@ -36,6 +36,7 @@ public class GameServiceImpl implements GameService {
     public Collection<Game> getUserGame(UUID userId) {
         // 1. Filtrer le flux pour ne garder que les parties contenant l'identifiant du joueur
         return this.gameDao.findAll()
+                .stream()
                 .filter(game -> game.getPlayerIds().contains(userId))
                 .toList();
     }

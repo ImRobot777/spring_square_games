@@ -20,8 +20,13 @@ public class InMemoryGameDao implements GameDao {
     */
 
     @Override
-    public Stream<Game> findAll() {
-        return gameStorage.values().stream();
+    public List<Game> findAll() {
+        return gameStorage.values().stream().toList(); // .toList() <==> new way of .collect(Collectors.toList())
+
+        // Alternative using ArrayList copy constructor (direct memory copy)
+        //return new ArrayList<>(this.gameStorage.values());
+        // Or using List.copyOf for an unmodifiable list
+        //return List.copyOf(this.gameStorage.values());
     }
 
     @Override

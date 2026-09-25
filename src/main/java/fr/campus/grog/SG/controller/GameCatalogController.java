@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Locale;
 
 @RestController
-@Tag(name = "Catalogue de jeux", description = "Consultation des jeux disponibles et traduction multilingue")
+@Tag(name = "Game Catalog", description = "Available games catalog and multilingual translation")
 public class GameCatalogController {
 
     private final GameCatalog gameCatalog;
@@ -22,16 +22,16 @@ public class GameCatalogController {
         this.gameCatalog = gameCatalog;
     }
 
-    @Operation(summary = "Lister les identifiants techniques des jeux", description = "Retourne la liste des identifiants disponibles (ex: tictactoe, connect4, taquin).")
+    @Operation(summary = "List technical game identifiers", description = "Returns the list of available game identifiers (e.g., tictactoe, connect4, taquin).")
     @GetMapping("/gamesIds")
     public Collection<String> getGameListIds() {
         return this.gameCatalog.getAvailableItemIds();
     }
 
-    @Operation(summary = "Consulter le catalogue traduit", description = "Retourne les noms traduits des jeux selon l'en-tête standard HTTP Accept-Language (ex: fr, en).")
+    @Operation(summary = "Get translated game catalog", description = "Returns translated game names based on the standard HTTP Accept-Language header (e.g., fr, en).")
     @GetMapping("/catalog")
     public List<String> getGameNames(
-            @Parameter(description = "Locale déduite automatiquement par Spring depuis l'en-tête Accept-Language", hidden = true)
+            @Parameter(description = "Locale automatically resolved by Spring from the Accept-Language header", hidden = true)
             Locale locale) {
         // Spring automatically populates 'locale' from the HTTP "Accept-Language" header!
         return this.gameCatalog.getAvailableItemNames(locale);

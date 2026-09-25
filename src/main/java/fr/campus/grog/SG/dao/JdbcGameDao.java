@@ -32,7 +32,7 @@ public class JdbcGameDao implements GameDao {
     // resolved using Spring Data JPA in NEXT step. (in the future GameDao Implementation Class)
 
     @Override
-    public Stream<Game> findAll() {
+    public List<Game> findAll() {
         String sql = "SELECT * FROM games";
 
         List<Game> games = this.jdbcTemplate.query(sql, Map.of(), (rs, rowNum) -> {
@@ -45,7 +45,7 @@ public class JdbcGameDao implements GameDao {
             return plugin.createGame((Integer) null, boardSize);
         });
 
-        return games.stream();
+        return games;
     }
 
     @Override

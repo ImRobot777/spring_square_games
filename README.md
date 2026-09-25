@@ -15,20 +15,24 @@ Ce service s'intègre dans une architecture distribuée et collabore avec le mic
 ## 🏗️ Architecture & Conception Logicielle
 
 Le projet applique les principes de l'architecture logicielle en couches et du découplage strict :
-- **Couche Présentation REST (`controller`)** : Exposition des routes HTTP conformes aux standards REST, négociation de contenu i18n (`Accept-Language`), documentation OpenAPI 3.
+- **Sécurité & Resource Server Stateless (`config`, `service`)** : Intégration de Spring Security 6 en mode 100% sans état (`STATELESS`). Le filtre `JwtAuthenticationFilter` intercepte l'en-tête standard `Authorization: Bearer <token>`, valide la signature cryptographique asymétrique à l'aide de la clé publique RSA de Square Users (`public.pem`), extrait le claim `userId` (`UUID`) et injecte l'identité authentifiée directement dans le contrôleur via `@AuthenticationPrincipal` (zéro requête réseau vers SU pour valider le créateur).
+- **Couche Présentation REST (`controller`)** : Exposition des routes HTTP conformes aux standards REST, négociation de contenu i18n (`Accept-Language`), documentation OpenAPI 3 masquant les paramètres internes (`@Parameter(hidden = true)`).
 - **Couche Métier & Orchestration (`service`)** : Application des règles multi-joueurs, contrôle du tour de jeu et intégrité des données.
 - **Couche Plugins (`plugin`)** : Implémentation du patron **Plugin** (`GamePlugin`) pour rendre le système ouvert à l'extension sans modifier le code existant (*Open/Closed Principle*). Les plugins chargent leurs paramètres par défaut depuis `application.properties` (`@Value`) et traduisent les noms via `MessageSource`.
 - **Couche d'Accès aux Données (`dao`, `entity`)** : Patron **DAO** isolant totalement le métier de la technologie de persistance. Support dynamique de persistance en mémoire vive (`InMemoryGameDao`), relationnelle explicite (`JdbcGameDao`) et ORM (`JpaGameDao` avec Spring Data JPA).
-- **Communication Inter-Services (`client`)** : Client HTTP synchrone déclaratif s'appuyant sur **`RestClient`** (Spring Boot 3.2+) pour vérifier l'existence des joueurs auprès de Square Users.
+- **Communication Inter-Services (`client`)** : Client HTTP synchrone déclaratif s'appuyant sur **`RestClient`** (Spring Boot 3.2+) pour vérifier l'existence des adversaires invités auprès de Square Users.
 
 ```text
-[ Client HTTP / Bruno / Navigateur ]
+[ Client HTTP (Joueur avec Bearer JWT) ]
                  │
                  ▼
-[ GameController & GameCatalogController ] (@RestController - Port 8080)
+[ JwtAuthenticationFilter ] ──(Validation RSA locale public.pem)──> [ SecurityContextHolder ]
                  │
                  ▼
-[ GameServiceImpl ] (@Service) ──(RestClient)──> [ Square Users (Port 8081) ]
+[ GameController & GameCatalogController ] (@AuthenticationPrincipal UUID userId)
+                 │
+                 ▼
+[ GameServiceImpl ] (@Service) ──(RestClient: validation adversaires)──> [ Square Users (Port 8081) ]
          │               │
          ▼               ▼
 [ Couche Plugins ]   [ Couche DAO (JpaGameDao) ]
@@ -143,19 +147,19 @@ Dès que l'application est démarrée, l'interface interactive Swagger UI permet
 👉 **Interface Swagger UI** : [`http://localhost:8080/swagger-ui/index.html`](http://localhost:8080/swagger-ui/index.html)  
 👉 **Spécification OpenAPI 3 (JSON)** : [`http://localhost:8080/v3/api-docs`](http://localhost:8080/v3/api-docs)
 
-> 💡 **Astuce de Test** : Pour les endpoints requérant l'en-tête `X-UserId`, un champ de saisie dédié apparaît automatiquement dans Swagger UI lorsque vous cliquez sur **"Try it out"**.
+> 💡 **Authentification Bearer** : Les routes protégées nécessitent un jeton JWT valide émis par Square Users (`SU`), transmis via l'en-tête standard `Authorization: Bearer <TOKEN>`. L'identifiant `userId` du joueur connecté est extrait automatiquement du jeton en mémoire vive par Spring Security (`@AuthenticationPrincipal`).
 
 ---
 
 ## 🌐 Guide des Endpoints & Exemples `curl`
 
-### 1. Obtenir les identifiants techniques des jeux disponibles
+### 1. Obtenir les identifiants techniques des jeux disponibles (Public)
 ```bash
 curl -X GET http://localhost:8080/gamesIds
 ```
 *Réponse :* `["tictactoe", "15 puzzle", "connect4"]`
 
-### 2. Consulter le catalogue traduit (i18n)
+### 2. Consulter le catalogue traduit (i18n - Public)
 ```bash
 # Noms en français
 curl -X GET http://localhost:8080/catalog -H "Accept-Language: fr"
@@ -166,11 +170,11 @@ curl -X GET http://localhost:8080/catalog -H "Accept-Language: en-US"
 # -> ["Connect Four", "Tic-Tac-Toe", "15 Puzzle"]
 ```
 
-### 3. Créer une nouvelle partie
-> ⚠️ **Important** : L'en-tête `X-UserId` est obligatoire et doit correspondre à un utilisateur valide enregistré dans `Square Users`.
+### 3. Créer une nouvelle partie (Sécurisé par JWT)
+> ⚠️ **Important** : L'en-tête `Authorization: Bearer <TOKEN>` est obligatoire. Le créateur est garanti et certifié par la signature cryptographique asymétrique du jeton.
 ```bash
 curl -X POST http://localhost:8080/games \
-  -H "X-UserId: b8f05e32-1234-4a56-b789-0123456789ab" \
+  -H "Authorization: Bearer $TOKEN_ALICE" \
   -H "Content-Type: application/json" \
   -d '{
     "gameFactoryId": "tictactoe",
@@ -179,41 +183,43 @@ curl -X POST http://localhost:8080/games \
   }'
 ```
 
-### 4. Lister les parties d'un joueur
+### 4. Lister les parties du joueur connecté (Sécurisé par JWT)
 ```bash
 curl -X GET http://localhost:8080/games \
-  -H "X-UserId: b8f05e32-1234-4a56-b789-0123456789ab"
+  -H "Authorization: Bearer $TOKEN_ALICE"
 ```
 
 ### 5. Consulter l'état d'une partie par son identifiant
 ```bash
-curl -X GET http://localhost:8080/games/<GAME_UUID>
+curl -X GET http://localhost:8080/games/<GAME_UUID> \
+  -H "Authorization: Bearer $TOKEN_ALICE"
 ```
 
 ### 6. Obtenir la liste des coups immédiatement jouables
 ```bash
-curl -X GET http://localhost:8080/games/<GAME_UUID>/moves
+curl -X GET http://localhost:8080/games/<GAME_UUID>/moves \
+  -H "Authorization: Bearer $TOKEN_ALICE"
 ```
 
-### 7. Jouer un coup
+### 7. Jouer un coup (Sécurisé par JWT)
 ```bash
 curl -X POST http://localhost:8080/games/<GAME_UUID>/moves \
-  -H "X-UserId: <CURRENT_PLAYER_UUID>" \
+  -H "Authorization: Bearer $TOKEN_ALICE" \
   -H "Content-Type: application/json" \
   -d '{
     "target": { "x": 1, "y": 1 }
   }'
 ```
-*Si ce n'est pas votre tour ou si vous n'êtes pas un joueur de la partie, l'API renvoie immédiatement un code `403 FORBIDDEN`.*
+*Si le jeton est manquant ou invalide, l'API renvoie `401 UNAUTHORIZED`. Si ce n'est pas votre tour ou si vous n'êtes pas un joueur de la partie, l'API renvoie `403 FORBIDDEN`.*
 
 ---
 
 ## 🧪 Exécution des Tests Automatisés
 
-Le projet inclut une suite de tests unitaires et d'intégration validant les contrôleurs REST, les services métier et les clients inter-services avec **JUnit 5**, **Mockito** et **MockMvc** :
+Le projet inclut une suite de tests unitaires et d'intégration validant les contrôleurs REST (avec `AuthenticationPrincipalArgumentResolver`), les services métier et les clients inter-services avec **JUnit 5**, **Mockito** et **MockMvc** :
 
 ```bash
-# Exécution de l'intégralité des tests (21 tests, 0 échec)
+# Exécution de l'intégralité des tests (18 tests, 0 échec)
 ./mvnw clean test -Dspring.profiles.active=h2
 ```
 
@@ -221,7 +227,7 @@ Le projet inclut une suite de tests unitaires et d'intégration validant les con
 
 ## 🔄 Scénario d'Intégration Microservices Complet (SG + SU)
 
-Pour tester la chaîne complète entre les deux microservices :
+Pour tester la chaîne complète sécurisée entre les deux microservices :
 
 1. **Démarrer Square Users** sur le port `8081` :
    ```bash
@@ -232,24 +238,33 @@ Pour tester la chaîne complète entre les deux microservices :
    # Création d'Alice
    curl -X POST http://localhost:8081/users \
      -H "Content-Type: application/json" \
-     -d '{"pseudo": "Alice", "email": "alice@test.com"}'
+     -d '{"pseudo": "Alice", "email": "alice@test.com", "password": "passwordAlice123!"}'
    # -> Noter l'UUID Alice (ex: uuid_alice)
 
-   # Création de Bob
+   # Création de Bob (adversaire)
    curl -X POST http://localhost:8081/users \
      -H "Content-Type: application/json" \
-     -d '{"pseudo": "Bob", "email": "bob@test.com"}'
+     -d '{"pseudo": "Bob", "email": "bob@test.com", "password": "passwordBob123!"}'
    # -> Noter l'UUID Bob (ex: uuid_bob)
    ```
-3. **Démarrer Square Games** sur le port `8080` :
+3. **Authentifier Alice et récupérer son jeton JWT** auprès de Square Users :
+   ```bash
+   TOKEN_ALICE=$(curl -s -X POST http://localhost:8081/auth/login \
+     -H "Content-Type: application/json" \
+     -d '{"username": "Alice", "password": "passwordAlice123!"}' | jq -r '.token')
+   ```
+4. **Démarrer Square Games** sur le port `8080` :
    ```bash
    cd ../spring_square_games && ./mvnw spring-boot:run
    ```
-4. **Créer la partie sur Square Games** :
+5. **Créer la partie sur Square Games avec le jeton d'Alice** :
    ```bash
    curl -X POST http://localhost:8080/games \
-     -H "X-UserId: <uuid_alice>" \
+     -H "Authorization: Bearer $TOKEN_ALICE" \
      -H "Content-Type: application/json" \
      -d '{"gameFactoryId": "tictactoe", "boardSize": 3, "opponentIds": ["<uuid_bob>"]}'
    ```
-5. **Vérifier l'arbitrage** : Si vous essayez de jouer avec un UUID inconnu ou avec le joueur dont ce n'est pas le tour, Square Games interroge Square Users et rejette la requête en `403 FORBIDDEN`.
+6. **Vérifier la sécurité et l'arbitrage** :
+   - Si la requête est envoyée sans jeton ou avec un jeton corrompu : `401 UNAUTHORIZED`.
+   - Si un joueur tente de jouer hors de son tour : `403 FORBIDDEN`.
+   - L'identité du créateur est validée en mémoire vive locale (zéro latence réseau), tandis que l'existence de l'adversaire Bob est vérifiée via `RestClient` auprès de `SU`.

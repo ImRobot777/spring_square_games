@@ -21,7 +21,6 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -208,7 +207,7 @@ class GameServiceImplTest {
         Game gameWithoutUser = mock(Game.class);
         when(gameWithoutUser.getPlayerIds()).thenReturn(Set.of(otherUserId));
 
-        when(gameDao.findAll()).thenReturn(Stream.of(gameWithUser, gameWithoutUser));
+        when(gameDao.findAll()).thenReturn(List.of(gameWithUser, gameWithoutUser));
 
         Collection<Game> userGames = gameService.getUserGame(userId);
 

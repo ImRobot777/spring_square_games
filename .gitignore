@@ -5,7 +5,7 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-### --- Fichiers d'environnement & Secrets ---
+### --- Environment Files & Secrets ---
 .env
 .env.local
 .env.*.local
@@ -15,7 +15,14 @@ application-local.properties
 application-local.yml
 application-*-local.properties
 
-### --- Logs & Rapports d'erreurs JVM ---
+### --- Cryptographic Keys & Certificates ---
+# NEVER commit private keys to Git!
+**/certs/private_key.pem
+*.key
+*.pem
+!**/certs/public_key.pem
+
+### --- Logs & JVM Error Reports ---
 *.log
 logs/
 hs_err_pid*
@@ -48,7 +55,7 @@ out/
 /.nb-gradle/
 build/
 
-### --- Système d'exploitation (OS) ---
+### --- Operating System (OS) ---
 # macOS
 .DS_Store
 .AppleDouble
@@ -65,10 +72,11 @@ ehthumbs_vista.db
 *.stackdump
 [Dd]esktop.ini
 
-# Linux / Éditeurs génériques
+# Linux / Generic Editors
 *~
 *.swp
 *.swo
 
-### --- Documentation auto-générée Spring Initializr ---
+### --- Spring Initializr Auto-generated Documentation ---
 HELP.md
+
