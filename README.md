@@ -120,6 +120,21 @@ docker start sg-postgres
 
 ---
 
+## ⚙️ Configuration & Variables d'Environnement
+
+Le microservice est paramétrable via des variables d'environnement système (méthodologie *12-Factor App*). Chaque variable dispose d'une valeur de repli pour garantir un fonctionnement immédiat en développement local :
+
+| Variable d'Environnement | Description | Valeur par Défaut (Local) |
+|---|---|---|
+| `SG_SERVER_PORT` | Port d'écoute HTTP du serveur Tomcat | `8080` |
+| `SG_DB_URL` | URL JDBC de connexion PostgreSQL | `jdbc:postgresql://localhost:5432/square_games` |
+| `SG_DB_USER` | Nom d'utilisateur de la base de données | `postgres` |
+| `SG_DB_PASSWORD` | Mot de passe de la base de données | `postgres` |
+| `SU_SERVICE_URL` | URL racine du microservice Square Users pour la validation des joueurs | `http://localhost:8081` |
+| `SG_JWT_PUBLIC_KEY_PATH` | Emplacement de la clé publique RSA de Square Users | `classpath:certs/public_key.pem` |
+
+---
+
 ## 🚀 Démarrage de l'Application
 
 ### Option A : Profil PostgreSQL (Standard / Production)
