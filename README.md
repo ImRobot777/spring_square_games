@@ -216,6 +216,11 @@ curl -X GET http://localhost:8080/games/<GAME_UUID>/moves \
   -H "Authorization: Bearer $TOKEN_ALICE"
 ```
 
+> 💡 **Note d'Architecture — Consultation ouverte vs Mutation étanche ("Conforme par conception / By Design")** :  
+> Les endpoints de lecture (`GET /games/{id}` et `GET /games/{id}/moves`) sont délibérément ouverts à tout utilisateur authentifié pour permettre le **mode spectateur** et l'**aide visuelle du plateau** (mise en surbrillance des cases immédiatement jouables par l'interface cliente).  
+> La véritable barrière de sécurité réside sur la mutation d'état (`POST /games/{id}/moves`), rigoureusement étanche dans `GameServiceImpl` (contrôle strict du joueur actif `game.getCurrentPlayerId().equals(userId)` renvoyant `403 FORBIDDEN`). Dans un audit logiciel, ce comportement est donc classé en **"Conforme par conception" (By Design)**, car il découle d'un choix fonctionnel assumé et non d'un oubli de sécurité.
+
+
 ### 7. Jouer un coup (Sécurisé par JWT)
 ```bash
 curl -X POST http://localhost:8080/games/<GAME_UUID>/moves \
@@ -234,7 +239,7 @@ curl -X POST http://localhost:8080/games/<GAME_UUID>/moves \
 Le projet inclut une suite de tests unitaires et d'intégration validant les contrôleurs REST (avec `AuthenticationPrincipalArgumentResolver`), les services métier et les clients inter-services avec **JUnit 5**, **Mockito** et **MockMvc** :
 
 ```bash
-# Exécution de l'intégralité des tests (18 tests, 0 échec)
+# Exécution de l'intégralité des tests (20 tests, 0 échec)
 ./mvnw clean test -Dspring.profiles.active=h2
 ```
 

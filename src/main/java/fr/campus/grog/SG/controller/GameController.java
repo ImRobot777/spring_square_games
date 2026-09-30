@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -48,7 +49,7 @@ public class GameController {
     public Game createGame(
             @Parameter(hidden = true)
             @AuthenticationPrincipal UUID userId,
-            @RequestBody GameCreationParams requestParams) {
+            @RequestBody @Valid GameCreationParams requestParams) {
         return this.gameService.createGame(userId, requestParams);
     }
 
@@ -89,7 +90,7 @@ public class GameController {
             @AuthenticationPrincipal UUID userId,
             @Parameter(description = "UUID identifier of the game", required = true)
             @PathVariable UUID gameId,
-            @RequestBody MoveParams moveParams) {
+            @RequestBody @Valid MoveParams moveParams) {
         return this.gameService.move(userId, gameId, moveParams);
     }
 

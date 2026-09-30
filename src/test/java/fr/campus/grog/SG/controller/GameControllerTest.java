@@ -26,8 +26,8 @@ import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -81,6 +81,30 @@ class GameControllerTest {
                 .andExpect(status().isOk());
 
         verify(gameService).createGame(eq(userId), any(GameCreationParams.class));
+    }
+
+    @Test
+    void testCreateGame_WhenInvalidParams_ReturnsHttp400() throws Exception {
+
+        UUID userId = UUID.randomUUID();
+
+        // Seed the SecurityContext with the authenticated user ID for AuthenticationPrincipal resolution
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(userId, null, List.of()));
+
+        String jsonPayload = """
+        {
+            "gameFactoryId": null,
+            "nbPlayers": 2,
+            "boardSize": 3
+        }
+        """;
+
+        mockMvc.perform(post("/games")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonPayload))
+                .andExpect(status().isBadRequest()); // Asserts HTTP 400 Bad Request
+
+        verifyNoInteractions(gameService);
     }
 
     @Test
@@ -151,6 +175,28 @@ class GameControllerTest {
                 .andExpect(status().isOk());
 
         verify(gameService).move(eq(userId), eq(gameId), any());
+    }
+
+    @Test
+    void testMove_WhenInvalidParams_ReturnsHttp400() throws Exception {
+        UUID gameId = sampleGame.getId();
+        UUID userId = UUID.randomUUID();
+        // Seed the SecurityContext with the authenticated user ID for AuthenticationPrincipal resolution
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(userId, null, List.of()));
+
+        String jsonPayload = """
+        {
+            "target": null,
+            "source": null
+        }
+        """;
+
+        mockMvc.perform(post("/games/{gameId}/moves", gameId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonPayload))
+                .andExpect(status().isBadRequest()); // Asserts HTTP 400 Bad Request
+
+        verifyNoInteractions(gameService);
     }
 
 
